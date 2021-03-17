@@ -20,14 +20,16 @@ main(void)
   dup(0);  // stderr
 
   for(;;){
-    printf(1, "init: starting sh\n");
+    printf(1, "All systems ready...\n");
     pid = fork();
     if(pid < 0){
       printf(1, "init: fork failed\n");
       exit();
     }
     if(pid == 0){
-      exec("sh", argv);
+      // cambiando sh por ls: hace un loop infinito de estar imprimiendo la lista de archivos (ls) 
+	  // cambiando sh por "nohayprograma": se mete en un loop de starting sh y exec: fail pues no existe lo que esta intentando ejecutar
+	  exec("sh", argv);
       printf(1, "init: exec sh failed\n");
       exit();
     }
