@@ -3,9 +3,17 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdlib.h> 
+#include <string.h>
+#include <signal.h>
+
+void signalHandler(int sig){
+	printf("Recibi segnal %d\n", sig);
+}
 
 int main(){
 	
+	signal(3, signalHandler);
+
 	// from parent to child, parent write, child read
     int pp2c[2];
     // from child to parent, child write, parent read
@@ -44,124 +52,75 @@ int main(){
             // close unnecessary pipes
             close(pp2c[0]);
             close(pc2p[1]);
-            // open pipes as stream
+            
+			// open pipes as stream
            	// this is need to use fprintf/scanf to write/read from the pipes
             FILE *out = fdopen(pp2c[1], "w");
             FILE *in = fdopen(pc2p[0], "r");
 
+			char word[1024];			// stores string from scanf()
+			char function[1024];		// stores function inputted by user
 			
+			float min;					// lower limit of eval range
+			float max; 					// upper limit of eval range
+			float eval_point;			// value at which function will be evaluated, sent to bc 			
+			float sum;					// stores results sum
+			float average;				// results average
+				
+			int points;					// amount of points to evaluate
+			int count;					// keep count of inputs
 			
-			int suma = 0;
-			
-			char function[1024];
-			char range[1024];
-			char result[1024];
-			
-			float min, max, eval_point; 
-			int points;
-			
-			fgets(function, 1024, stdin);
-			fgets(range, 1024, stdin);
-			
-			min = (float) atoi(&range[0]);
-			max = (float) atoi(&range[2]);
-			points = atoi(&range[4]);
-			
-			eval_point = 1;
-			
-			fprintf(out, "x=%f\n", eval_point);
-			fprintf(out, "%s", function);
-            fclose(out);
-            // read child process output
-            while (fscanf(in, "%s", result) != EOF) {
-                printf("resultad : %s\n", result);
-            }
-            fclose(in);
+			while(1){
+				// reset every loop
+				count = 0;
+				sum = 0;
 
-			out = fdopen(pp2c[1], "w");
-            in = fdopen(pc2p[0], "r");
-			
-			printf("part2");
-			eval_point = 2;
-			fprintf(out, "x=%f\n", eval_point);
-			fprintf(out, "%s", function);
-            fclose(out);
-            // read child process output
-            while (fscanf(in, "%s", result) != EOF) {
-                printf("resultad : %s\n", result);
-            }
-            fclose(in);
-			
-			
-			//printf("%f\n", min);
-			//printf("%f\n", max);
-			//printf("%d\n", points);
-			
-			/*for(int i = 0 ; i < points; i++){
+				do{
+					scanf("%s", word);							// scan user input
+					if(count == 0){
+						memcpy(function, word, sizeof(word));	// first input is the function
+					}
+					else if (count == 1){						// inputs 2-4 are the range
+						min = atof(word);						// scanf splits the values for us
+					}
+					else if (count == 2){						 
+						max = atof(word);
+					}
+					else if (count == 3){						
+						points = atof(word);
+					}
+					else{
+						break;
+					}
+					count++;
+				} while(count < 4);								// stop reading inputs
+
+				// loop to evaluate on all points
+				for(int i = 0; i < points; i++){
+					eval_point = min + (i + 1) * (max - min) / points;		// calculate next point to evaluate
+					fprintf(out, "x=%f\n", eval_point);						// send eval_point to child in format "x="					
+					fprintf(out, "%s\n", function);							// send function to child
+					fflush(out);											// clear to use "in" later
+
+					// read child process output
+					fscanf(in, "%s", word);
+					fflush(in);												// clear to use "out" later
+					
+					sum += atof(word);										// update sum
+				}
+
+				average = sum / points;			// when done calculate average
 				
-				eval_point = min + (points + 1) * (max-min) / points;
-				
-				out = fdopen(pp2c[1], "w");
-				fprintf(out, "x=%f\n", eval_point);
-				fprintf(out, "%s", function);
-				fclose(out);
-				
-				in = fdopen(pc2p[0], "r");
-				fscanf(in, "%s", result);
-				fclose(in);
-				printf("%s", result);
-			}*/
+				printf("%f\n", average);		// print program output
+			}
 			
-			//for(int i = 0 ; i < points; i++){
-				//printf("hola");
-			//}
-			
-			//eval_point = min + (points + 1) * (max-min) / points;
-			
-			/*eval_point = 8;
-				
-				fprintf(out, "x=%f\n", eval_point);
-				fprintf(out, "%s", function);
-				fclose(out);
-				
-				fscanf(in, "%s", result);
-				fclose(in);
-				printf("result = %s", result);
-			
-			wait(NULL);*/
-			/*
-			//eval_point = 2;
-				out = fdopen(pp2c[1], "w");
-				//fopen(out,"w");
-				fprintf(out, "x=%f\n", eval_point);
-				fprintf(out, "%s+1", function);
-				fclose(out);
-				
-				in = fdopen(pc2p[0], "r");
-				fscanf(in, "%s", result);
-				//fopen(in,"w");
-				fscanf(in, "%s", result);
-				//printf("closing\n");
-				//fclose(in);
-				printf("%s", result);
-			
-			*/
-			
-			//char word[1024];
-            // redirect input to child process
-            /*while (scanf("%s", word) != EOF) {
-                fprintf(out, "%s\n", word);
-            }*/
-            //fclose(out);
-            // read child process output
-            //while (fscanf(in, "%s", word) != EOF) {
-                //printf("%s\n", word);
-            //}
-            
+			// close
+			fclose(out);
+			fclose(in);			
 
             // call wait on finished child
-            wait(NULL);
-            break;
+        	wait(NULL);
+           	break;
     }
 
     return 0;
