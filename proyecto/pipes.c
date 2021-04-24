@@ -6,13 +6,16 @@
 #include <string.h>
 #include <signal.h>
 
+int done = 0;
+
 void signalHandler(int sig){
-	printf("Recibi segnal %d\n", sig);
+	wait(NULL);		// call wait on finished child
+	exit(0);		// exit program
 }
 
 int main(){
 	
-	signal(3, signalHandler);
+	signal(2, signalHandler);
 
 	// from parent to child, parent write, child read
     int pp2c[2];
@@ -58,7 +61,7 @@ int main(){
             FILE *out = fdopen(pp2c[1], "w");
             FILE *in = fdopen(pc2p[0], "r");
 
-			char word[1024];			// stores string from scanf()
+			//char word[1024];			// stores string from scanf()
 			char function[1024];		// stores function inputted by user
 			
 			float min;					// lower limit of eval range
@@ -66,35 +69,21 @@ int main(){
 			float eval_point;			// value at which function will be evaluated, sent to bc 			
 			float sum;					// stores results sum
 			float average;				// results average
+			float output;				// bc function output
 				
 			int points;					// amount of points to evaluate
 			int count;					// keep count of inputs
 			
 			while(1){
+				if (done) break;		// exit
+				
 				// reset every loop
 				count = 0;
 				sum = 0;
 
-				do{
-					scanf("%s", word);							// scan user input
-					if(count == 0){
-						memcpy(function, word, sizeof(word));	// first input is the function
-					}
-					else if (count == 1){						// inputs 2-4 are the range
-						min = atof(word);						// scanf splits the values for us
-					}
-					else if (count == 2){						 
-						max = atof(word);
-					}
-					else if (count == 3){						
-						points = atof(word);
-					}
-					else{
-						break;
-					}
-					count++;
-				} while(count < 4);								// stop reading inputs
-
+				scanf("%s", function);										// scan function to evaluate
+				scanf("%f %f %d", &min, &max, &points);						// scan range to evaluate
+						
 				// loop to evaluate on all points
 				for(int i = 0; i < points; i++){
 					eval_point = min + (i + 1) * (max - min) / points;		// calculate next point to evaluate
@@ -103,10 +92,10 @@ int main(){
 					fflush(out);											// clear to use "in" later
 
 					// read child process output
-					fscanf(in, "%s", word);
+					fscanf(in, "%f", &output);
 					fflush(in);												// clear to use "out" later
 					
-					sum += atof(word);										// update sum
+					sum += output;											// update sum
 				}
 
 				average = sum / points;			// when done calculate average
