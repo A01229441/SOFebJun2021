@@ -6,8 +6,6 @@
 #include <string.h>
 #include <signal.h>
 
-int done = 0;
-
 void signalHandler(int sig){
 	wait(NULL);		// call wait on finished child
 	exit(0);		// exit program
@@ -43,10 +41,7 @@ int main(){
             close(pc2p[0]);
             dup2(pc2p[1], STDOUT_FILENO);
             close(pc2p[1]);
-
-            // exec "rev" to reverse lines
-            //execlp("rev", "rev", (char*) NULL);
-			
+			// call bc calculator program			
 			execl("/usr/bin/bc","bc","-l", NULL);
           break;
         
@@ -74,13 +69,11 @@ int main(){
 			int points;					// amount of points to evaluate
 			int count;					// keep count of inputs
 			
-			while(1){
-				if (done) break;		// exit
-				
+			while(1){				
 				// reset every loop
 				count = 0;
 				sum = 0;
-
+				
 				scanf("%s", function);										// scan function to evaluate
 				scanf("%f %f %d", &min, &max, &points);						// scan range to evaluate
 						
