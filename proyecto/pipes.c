@@ -8,6 +8,7 @@
 
 void signalHandler(int sig){
 	wait(NULL);		// call wait on finished child
+	printf("\n");	// for presentation
 	exit(0);		// exit program
 }
 
@@ -23,8 +24,6 @@ int main(){
 	// create pipes
 	pipe(pp2c);
     pipe(pc2p);
-	
-	int sum;
 
     switch (fork()) {
         // fork failed
@@ -43,7 +42,7 @@ int main(){
             close(pc2p[1]);
 			// call bc calculator program			
 			execl("/usr/bin/bc","bc","-l", NULL);
-          break;
+          	break;
         
 		// parent
         default:
