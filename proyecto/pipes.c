@@ -6,14 +6,14 @@
 #include <string.h>
 #include <signal.h>
 
-void signalHandler(int sig){
+void signalHandler(){
 	wait(NULL);		// call wait on finished child
 	printf("\n");	// for presentation
 	exit(0);		// exit program
 }
 
 int main(){
-	
+	// ctrl C handler
 	signal(2, signalHandler);
 
 	// from parent to child, parent write, child read
@@ -55,19 +55,18 @@ int main(){
             FILE *out = fdopen(pp2c[1], "w");
             FILE *in = fdopen(pc2p[0], "r");
 
-			//char word[1024];			// stores string from scanf()
 			char function[1024];		// stores function inputted by user
-			
+
 			float min;					// lower limit of eval range
 			float max; 					// upper limit of eval range
-			float eval_point;			// value at which function will be evaluated, sent to bc 			
+			float eval_point;			// value at which function will be evaluated, sent to bc
 			float sum;					// stores results sum
 			float average;				// results average
 			float output;				// bc function output
-				
+	
 			int points;					// amount of points to evaluate
 			int count;					// keep count of inputs
-			
+
 			while(1){				
 				// reset every loop
 				count = 0;
@@ -75,11 +74,11 @@ int main(){
 				
 				scanf("%s", function);										// scan function to evaluate
 				scanf("%f %f %d", &min, &max, &points);						// scan range to evaluate
-						
+
 				// loop to evaluate on all points
 				for(int i = 0; i < points; i++){
 					eval_point = min + (i + 1) * (max - min) / points;		// calculate next point to evaluate
-					fprintf(out, "x=%f\n", eval_point);						// send eval_point to child in format "x="					
+					fprintf(out, "x=%f\n", eval_point);						// send eval_point to child in format "x="
 					fprintf(out, "%s\n", function);							// send function to child
 					fflush(out);											// clear to use "in" later
 
@@ -88,24 +87,24 @@ int main(){
 					fflush(in);												// clear to use "out" later
 					
 					sum += output;											// update sum
-				}
+				}	// for
 
 				average = sum / points;			// when done calculate average
 				
 				printf("%f\n", average);		// print program output
-			}
+			}	// while
 			
 			// close
 			fclose(out);
-			fclose(in);			
+			fclose(in);
 
             // call wait on finished child
         	wait(NULL);
            	break;
-    }
+    }	//switch
 
     return 0;
-}
+}	//main
 
 
 
